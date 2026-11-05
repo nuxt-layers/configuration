@@ -60,44 +60,107 @@ const demoEnabled = defineConfigurationSetting({ key: 'demo.enabled', schema: z.
 
 ### Optional Clock presentation preferences (host-declared)
 
-These six settings are **not built-in Configuration keys**. A consuming host may declare them using the existing `defineConfigurationSetting` and `provideConfigurationCatalogue` APIs. A complete optional declaration and mapping example is in `examples/clock-preferences.ts`; copy it into the host as needed. It imports no Clock code. The existing Configuration catalogue, persistence and permission mechanisms need no extension.
+**Available today:** Configuration accepts host-declared keys, validates their declared schemas, resolves permitted scopes and returns effective values with provenance. The six `clock.*` keys below are **not built in**. The host declares them; Configuration does not import or invoke Clock.
 
-| Key | Declared default | Shape |
+| Key | Default | Type |
 |---|---|---|
-| `clock.locale` | `en-GB` | BCP 47 string |
-| `clock.time-zone` | `UTC` | Valid time-zone identifier |
-| `clock.hour-cycle` | `h23` | `h11 \| h12 \| h23 \| h24` |
-| `clock.date-pattern` | `dd/MM/yyyy` | Bounded presentation string |
-| `clock.time-pattern` | `HH:mm:ss` | Bounded presentation string |
-| `clock.date-time-pattern` | `dd/MM/yyyy HH:mm:ss` | Bounded presentation string |
+| `clock.locale` | `en-GB` | Locale string (structural BCP 47 check) |
+| `clock.time-zone` | `UTC` | Time-zone identifier recognised by the server's `Intl` runtime |
+| `clock.hour-cycle` | `h23` | `h11`, `h12`, `h23` or `h24` |
+| `clock.date-pattern` | `dd/MM/yyyy` | Bounded presentation-pattern string |
+| `clock.time-pattern` | `HH:mm:ss` | Bounded presentation-pattern string |
+| `clock.date-time-pattern` | `dd/MM/yyyy HH:mm:ss` | Bounded presentation-pattern string |
 
-Host composition:
+**Complete host declaration example.** Put the following in the host's own TypeScript module (for example `shared/clock-preferences.ts`). The imports are public; `zod` must be available to the host. This example is equivalent to the optional repository example, not a Configuration API addition.
 
 ```ts
-// Copy the example declarations and mapping helper into the host.
-provideConfigurationCatalogue(clockPresentationDeclarations)
+import { z } from 'zod'
+import { defineConfigurationSetting, localeSchema } from '@nuxt-layers/configuration/contracts'
 
-// In a trusted server handler, after resolving and authorising the request's viewer:
-const answer = await getConfiguration({
-  // Use the authorised tenantId OR groupId OR accountId for that context.
-  tenantId: authorisedTenantId,
-  keys: clockPresentationKeys,
-  visibility: 'members',
-})
-if (!answer) throw new Error('Configuration context unavailable')
-const preferences: ClockPresentationPreferences = toClockPresentationPreferences(answer.values)
+const scopes = ['platform', 'tenant', 'group', 'account'] as const
+const timeZoneSchema = z.string().min(1).max(100).refine((value) => {
+  try { new Intl.DateTimeFormat('en', { timeZone: value }); return true }
+  catch { return false }
+}, 'invalid-time-zone')
+const patternSchema = z.string().min(1).max(120)
+  .regex(/^[A-Za-z0-9 /:.'-]+$/, 'invalid-pattern-characters')
+const hourCycleSchema = z.enum(['h11', 'h12', 'h23', 'h24'])
+
+function setting(key: string, schema: z.ZodType<string>, defaultValue: string) {
+  return defineConfigurationSetting({
+    key, schema, scopes, visibility: 'members',
+    sensitivity: 'organisational', risk: 'low', default: defaultValue,
+  })
+}
+
+export const clockPresentationDeclarations = [
+  setting('clock.locale', localeSchema, 'en-GB'),
+  setting('clock.time-zone', timeZoneSchema, 'UTC'),
+  setting('clock.hour-cycle', hourCycleSchema, 'h23'),
+  setting('clock.date-pattern', patternSchema, 'dd/MM/yyyy'),
+  setting('clock.time-pattern', patternSchema, 'HH:mm:ss'),
+  setting('clock.date-time-pattern', patternSchema, 'dd/MM/yyyy HH:mm:ss'),
+] as const
+export const clockPresentationKeys = clockPresentationDeclarations.map(s => s.key)
+
+export type ClockPresentationPreferences = {
+  locale: string
+  timeZone: string
+  hourCycle: 'h11' | 'h12' | 'h23' | 'h24'
+  datePattern: string
+  timePattern: string
+  dateTimePattern: string
+}
+
+export function toClockPresentationPreferences(values: Record<string, unknown>): ClockPresentationPreferences {
+  const parsed = Object.fromEntries(clockPresentationDeclarations.map(s => [
+    s.key, s.schema.parse(values[s.key] ?? s.default),
+  ]))
+  return {
+    locale: parsed['clock.locale'] as string,
+    timeZone: parsed['clock.time-zone'] as string,
+    hourCycle: parsed['clock.hour-cycle'] as ClockPresentationPreferences['hourCycle'],
+    datePattern: parsed['clock.date-pattern'] as string,
+    timePattern: parsed['clock.time-pattern'] as string,
+    dateTimePattern: parsed['clock.date-time-pattern'] as string,
+  }
+}
 ```
 
-**Access control:** `getConfiguration` is a privileged *server* function and does not authorise a supplied `accountId` on the host's behalf. Never accept these scope identifiers from untrusted request input. Resolve them from the authenticated viewer and authoritative tenant/group membership; use `readConfigurationForViewer` where appropriate for a viewer-authorised read. Restrict account values to the current person. Do not expose another account's settings, credentials, provenance or shared cache entries. These example keys use `members` visibility because account-capable declarations cannot be `public`.
+Register the declarations **once**, in the host's existing Nitro composition plugin, alongside its other settings. `provideConfigurationCatalogue` replaces the host-supplied catalogue rather than appending to it; include all other host declarations in the same call. Register before `provideConfigurationDeployment`.
 
-**Precedence:** Existing resolution applies: account overrides tenant/platform/default for an account read; group and nearest ancestors override tenant/platform/default for a group read. The current `getConfiguration({ accountId })` **does not combine account and group lineage** and rejects pairing `accountId` with `tenantId` or `groupId`. If a host needs both contexts, it must explicitly choose its application policy and perform separately authorised reads. Do not claim a combined resolution order.
+```ts
+provideConfigurationCatalogue([...otherHostDeclarations, ...clockPresentationDeclarations])
+```
 
-**Validation:** Configuration validates stored values against the host's Zod declarations and rejects invalid submitted values. The example checks locale shape, time-zone validity, hour-cycle membership, pattern length and safe characters, but **does not validate Clock's pattern tokens or temporal semantics**. Clock's future explicit parsing/formatting API, proposed in Clock PR #13, must validate token grammar. Do not accept arbitrary pattern text as a valid temporal pattern merely because Configuration accepts its structural shape. The mapping helper supplies declared defaults for missing values; invalid present values throw.
+**Authorised read.** The public server function `readConfigurationForViewer({ subject, tenantId, groupId?, account? })` accepts a subject returned by the trusted authentication resolver. It enforces the current viewer's account/group access. These are two **alternative** reads, not a single combined scope; in server code, import the declaration module from the host. The function is available through Configuration's server auto-imports.
 
-**SSR and hydration:** Resolve on the server for the authorised viewer, serialise only the six primitive preference values into that viewer's request-scoped hydration payload and use the *identical* object during initial rendering and hydration. Do not redetect browser time zone or locale until an explicit subsequent preference update. Mark personalised responses private/non-shared; never put account preferences in public runtime configuration.
+```ts
+// The host obtained subject through its authenticated server request,
+// and tenantId/groupId from its trusted tenancy and membership context.
+const accountAnswer = await readConfigurationForViewer({
+  subject, tenantId, account: true,
+})
+if (!accountAnswer) throw new Error('Configuration context unavailable')
+const accountPreferences = toClockPresentationPreferences(accountAnswer.values)
 
-**Ownership:** Profile remains the owner of personal locale and time-zone preferences under the present contract. Before adopting the account keys, the host must define how these map to, or are overridden by, Profile, avoiding two competing sources of truth. Configuration manages only host-declared values, scopes and storage. Clock is optional and never imported by Configuration. Pattern-based Clock formatting remains proposed, not implemented.
+// Alternatively: a group-context read, subject to membership/permission checks.
+const groupAnswer = await readConfigurationForViewer({ subject, tenantId, groupId })
+if (!groupAnswer) throw new Error('Configuration context unavailable')
+const groupPreferences = toClockPresentationPreferences(groupAnswer.values)
+```
 
+Server-side hosts may instead use `getConfiguration({ tenantId?, groupId?, accountId?, keys?, visibility: 'members' | 'server' })` with `keys: clockPresentationKeys`, **only after their own authorisation**. That privileged API does not check whether a supplied `accountId` belongs to the caller; do not expose it directly to browser requests. The `readConfigurationForViewer` examples above are safer for viewer-specific HTTP/SSR reads. A missing account context, unknown tenant or unavailable port must not silently switch to another account's values.
+
+**Effective values and fallback.** An account read resolves account → tenant → platform → deployment → declared default; a group read resolves current group → nearest ancestor (when `inherits: 'lineage'`) → tenant → platform → deployment → declared default. `getConfiguration({ accountId })` rejects combinations with `groupId` or `tenantId` and does **not** include group lineage. For a required account-plus-group policy, the host must specify and authorise separate reads rather than invent a combined Configuration precedence. Each non-locked setting has a default, and the mapping helper returns that default when a key is absent. A present invalid value is rejected by the schema; it is never accepted as a fallback.
+
+**Validation boundary.** Configuration checks locale shape, server-supported time-zone values, enumerated hour cycle, and pattern character/length bounds. This does **not** prove that a pattern is syntactically or semantically valid to Clock. Pattern interpretation, strict token parsing, date/time correctness and the proposed `parsePattern`/`formatPattern` operations belong to Clock and are **not yet implemented** under its integration proposal. The host must not label a structurally accepted pattern as Clock-validated. Display patterns must not determine canonical storage formats.
+
+**Account ownership.** The current Configuration contract assigns personal locale and time-zone preferences to Profile. The declarations above demonstrate Configuration's generic account-scope capability, **not** a transfer of personal preference ownership. Until a host establishes an explicit, single source of truth with Profile, use platform/tenant/group defaults for these keys; do not persist separate authoritative account locale/time-zone values in Configuration. Neither Configuration nor Clock should directly depend on Profile.
+
+**SSR and hydration.** Resolve an authorised viewer's effective preferences server-side for each request, project to the six primitive fields, and serialise **only that viewer's object** into request-scoped SSR payload. Reuse those exact values for the initial browser hydration; do not silently replace locale/time zone with browser detection. Personalised responses must use private/no-store caching as appropriate and never place account data in shared caches or public runtime configuration. On sign-out or viewer change, discard viewer-specific preferences.
+
+Configuration works without Clock. A host without Configuration can provide the documented defaults itself. The sample declarations and projection are host code, not new exported functions from the Configuration package.
 ## Host passes
 
 | Need | Shared shape (ADR-0012 §2) | Today |
