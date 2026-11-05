@@ -1,6 +1,6 @@
 # Configuration Contract (version 1)
 
-`@nuxt4-layers/configuration/contracts` is the only supported import path for this capability's types and pure helpers. It imports nothing but `zod`: no Nuxt, Vue, h3, server code, driver or other `@nuxt4-layers/*` package.
+`@nuxt-layers/configuration/contracts` is the only supported import path for this capability's types and pure helpers. It imports nothing but `zod`: no Nuxt, Vue, h3, server code, driver or other `@nuxt-layers/*` package.
 
 Configuration answers one question: **what does this site, this tenant or this group say about itself, now?** It holds organisational facts only. This is contract version 1 (§16): section numbers are stable, and the questions left open while it was drafted are decided in §17.
 
@@ -142,7 +142,7 @@ There is no `secret` visibility. A secret is never a setting, whatever its visib
 
 ## 6. Requesting a change
 
-Every change of values is requested as a **pending change**, whatever its risk, following iam-integration's [approvals process](https://github.com/nuxt4-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/approvals.md) as Authorisation does for roles and grants ([Authorisation contract](https://github.com/nuxt4-layers/authorisation/blob/342dcbc3b965076c973be29bbd57fbf179c8aaf0/docs/contracts.md) §15). Low-risk changes need no approver and apply at once, but take the same path, so every rule lives in one place.
+Every change of values is requested as a **pending change**, whatever its risk, following iam-integration's [approvals process](https://github.com/nuxt-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/approvals.md) as Authorisation does for roles and grants ([Authorisation contract](https://github.com/nuxt-layers/authorisation/blob/342dcbc3b965076c973be29bbd57fbf179c8aaf0/docs/contracts.md) §15). Low-risk changes need no approver and apply at once, but take the same path, so every rule lives in one place.
 
 A request (`configurationChangeRequestSchema`) names:
 
@@ -346,13 +346,13 @@ Import, export, disposal, maintenance and the relay are never endpoints.
 The host relays Identity's events to `applyConfigurationIdentityEvent`, which applies each once: `tenant.created`, `tenant.closing`, `tenant.closing-cancelled` and `tenant.closed` keep the tenant states (a closed tenant stays closed); `group.deleted` and `tenant.closed` with `disposal: 'due'`, and `group.disposal-due` and `tenant.disposal-due`, dispose as below; `identity.closed` disposes of the identity's account (`account-closed`). A deferred disposal (a legal hold) disposes of nothing until Identity says it is due. Other events are ignored.
 
 
-- **Group deletion** ([group deletion](https://github.com/nuxt4-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/group-deletion.md)): a deleted group's values stop resolving at once, because Identity's directory answers it as deleted (§4). When the disposal is due, `disposeConfigurationGroup` cancels its open changes, deletes its values, changes and history, and emits `configuration.reset` (`group-disposed`).
-- **Tenant shutdown** ([tenant lifecycle](https://github.com/nuxt4-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/tenant-lifecycle.md)): the host calls `exportConfigurationTenantData` for the tenant export; when the disposal is due, `disposeConfigurationTenant` does the same for the tenant and every group of it.
+- **Group deletion** ([group deletion](https://github.com/nuxt-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/group-deletion.md)): a deleted group's values stop resolving at once, because Identity's directory answers it as deleted (§4). When the disposal is due, `disposeConfigurationGroup` cancels its open changes, deletes its values, changes and history, and emits `configuration.reset` (`group-disposed`).
+- **Tenant shutdown** ([tenant lifecycle](https://github.com/nuxt-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/tenant-lifecycle.md)): the host calls `exportConfigurationTenantData` for the tenant export; when the disposal is due, `disposeConfigurationTenant` does the same for the tenant and every group of it.
 - **Data-subject requests**: Configuration holds a person only where a `possibly-personal` value names them or a change records them as requester or approver. Values are corrected by an ordinary change; requester and approver identifiers are opaque and are anonymised by Profile's unlinking, like every other member's.
 
 ## 15. Presentation
 
-Components, composables and pages live in `app/` and reach the server only through `useConfiguration()` and `useConfigurationAdministration()`. They decide nothing. Text comes from `app/configuration-messages.ts` through `useConfigurationText()`; hosts override wording in `app.config.ts` under `configuration.messages`. Styling uses only Theme Manager's SemanticPresentationTheme vocabulary (`configurationClasses`), as Profile's, Identity's and Authorisation's pages do; hosts add `@nuxt4-layers/configuration/tailwind.css` to their stylesheet.
+Components, composables and pages live in `app/` and reach the server only through `useConfiguration()` and `useConfigurationAdministration()`. They decide nothing. Text comes from `app/configuration-messages.ts` through `useConfigurationText()`; hosts override wording in `app.config.ts` under `configuration.messages`. Styling uses only Theme Manager's SemanticPresentationTheme vocabulary (`configurationClasses`), as Profile's, Identity's and Authorisation's pages do; hosts add `@nuxt-layers/configuration/tailwind.css` to their stylesheet.
 
 - Public: `useConfiguration()`, `useConfigurationHead()`, and `ConfigurationSiteName`, `ConfigurationOrganisationDetails`, `ConfigurationContact`, `ConfigurationSocialLinks`, `ConfigurationLegalLinks` (plain semantic markup).
 - Administration pages, registered by `modules/configuration-pages.ts` (`configuration: { pages: { enabled, paths: { settings, changes } }, signIn }` in the host's `nuxt.config.ts`; by default `/configuration` and `/configuration/changes`, scoped by `?scope=platform`, `?scope=tenant&governingGroupId=…` or `?scope=group&groupId=…`). Each setting shows its value in force, where it comes from and its risk; its form is built from the value's JSON Schema, so a host's own settings get one too. Saving requests a change and says whether it applied or awaits approval, by whom and until when. The changes page shows what each open change would do beside what is there now; others may approve or reject, the requester may withdraw. The pages are never framed, cached or sent as a Referer.
