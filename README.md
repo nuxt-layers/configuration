@@ -1,10 +1,10 @@
-# @nuxt4-layers/configuration
+# @nuxt-layers/configuration
 
 Nuxt 4 foundation layer for the facts a site states about itself and its organisation: its name, the organisation's legal details and address, contact points, social links, legal pages and presentation defaults, for the platform, each tenant and each group; and the settings a host declares per account, which only the account's own person reads or changes.
 
-A platform foundation layer, not a member of the Identity and Access Management (IAM) suite. It reaches [`identity`](https://github.com/nuxt4-layers/identity) and [`authorisation`](https://github.com/nuxt4-layers/authorisation) only through ports the host supplies, never imports them, and follows the suite's [approvals process](https://github.com/nuxt4-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/approvals.md) for its own changes.
+A platform foundation layer, not a member of the Identity and Access Management (IAM) suite. It reaches [`identity`](https://github.com/nuxt-layers/identity) and [`authorisation`](https://github.com/nuxt-layers/authorisation) only through ports the host supplies, never imports them, and follows the suite's [approvals process](https://github.com/nuxt-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/approvals.md) for its own changes.
 
-**Status:** 1.2.0, contract version 1 ([host contract](CONTRACT.md), [contract](docs/contracts.md), [roadmap](docs/roadmap.md)): the core, the HTTP API (tenant by host name), `useConfiguration()`, the public components, the administration pages, accounts, export and import, and composition with the IAM members through the layer's own adapters, proven in the platform test harness. From 1.1.0 the package is `@nuxt4-layers/configuration`, named after its repository like every other layer (1.0.0 was published as `@nuxt4-layers/configuration-service`). 1.2.0 adds `contact.security`, the contact a site's `security.txt` names.
+**Status:** development version 0.0.0, contract version 1 ([host contract](CONTRACT.md), [contract](docs/contracts.md), [roadmap](docs/roadmap.md)): the core, the HTTP API (tenant by host name), `useConfiguration()`, the public components, the administration pages, accounts, export and import, and composition with the IAM members through the layer's own adapters, proven in the platform test harness. From 1.1.0 the package is `@nuxt-layers/configuration`, named after its repository like every other layer (1.0.0 was published as `@nuxt-layers/configuration-service`). 1.2.0 adds `contact.security`, the contact a site's `security.txt` names.
 
 ## Owns
 
@@ -51,9 +51,9 @@ An organisation's address or contact point can still be personal data (a sole tr
 
 ## Governing decisions and specifications
 
-- [ADR-0002 — Composition-Supplied Persistence and Capability-Owned Schemas](https://github.com/nuxt4-layers/platform-architecture/blob/93f3d6fb144b72d61cfb172b6a50eb6c5af9f489/docs/decisions/ADR-0002-composition-supplied-persistence-and-capability-owned-schemas.md)
-- [ADR-0003 — Group Model and Identity Before Logging](https://github.com/nuxt4-layers/platform-architecture/blob/93f3d6fb144b72d61cfb172b6a50eb6c5af9f489/docs/decisions/ADR-0003-group-model-and-identity-first.md)
-- [ADR-0004 — Documentation Placement](https://github.com/nuxt4-layers/platform-architecture/blob/93f3d6fb144b72d61cfb172b6a50eb6c5af9f489/docs/decisions/ADR-0004-documentation-placement.md)
-- [ADR-0006 — Polyglot Persistence and Data-Store Security](https://github.com/nuxt4-layers/platform-architecture/blob/93f3d6fb144b72d61cfb172b6a50eb6c5af9f489/docs/decisions/ADR-0006-polyglot-persistence-and-data-store-security.md)
-- [Approvals (two-person rule)](https://github.com/nuxt4-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/approvals.md)
-- [Tenant lifecycle](https://github.com/nuxt4-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/tenant-lifecycle.md) and [group deletion](https://github.com/nuxt4-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/group-deletion.md)
+- [ADR-0002 — Composition-Supplied Persistence and Capability-Owned Schemas](https://github.com/nuxt-layers/architecture-rules/blob/master/docs/decisions/ADR-0002-composition-supplied-persistence-and-capability-owned-schemas.md)
+- [ADR-0003 — Group Model and Identity Before Logging](https://github.com/nuxt-layers/architecture-rules/blob/master/docs/decisions/ADR-0003-group-model-and-identity-first.md)
+- [ADR-0004 — Documentation Placement](https://github.com/nuxt-layers/architecture-rules/blob/master/docs/decisions/ADR-0004-documentation-placement.md)
+- [ADR-0006 — Polyglot Persistence and Data-Store Security](https://github.com/nuxt-layers/architecture-rules/blob/master/docs/decisions/ADR-0006-polyglot-persistence-and-data-store-security.md)
+- [Approvals (two-person rule)](https://github.com/nuxt-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/approvals.md)
+- [Tenant lifecycle](https://github.com/nuxt-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/tenant-lifecycle.md) and [group deletion](https://github.com/nuxt-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/group-deletion.md)

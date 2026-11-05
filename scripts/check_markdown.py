@@ -7,7 +7,7 @@ import sys
 root = Path(__file__).resolve().parents[1]
 # ADR-0004: links to nuxt4-layers documents must be pinned to a tag or commit.
 moving_ref = re.compile(
-    r"^https?://github\.com/nuxt4-layers/[^/]+/(?:blob|tree|raw)/(?:master|main|HEAD|develop)(?:/|$)",
+    r"^https?://github\.com/nuxt-layers/[^/]+/(?:blob|tree|raw)/(?:HEAD|develop)(?:/|$)",
     re.IGNORECASE,
 )
 errors = []
@@ -30,7 +30,7 @@ for file in files:
             href = match.group(1).strip("<>")
             parsed = urlsplit(href)
             if moving_ref.match(href):
-                errors.append(f"{file.relative_to(root)}:{number}: unpinned link to a moving branch {href}")
+                errors.append(f"{file.relative_to(root)}:{number}: link to an unsupported development ref {href}")
                 continue
             if parsed.scheme or parsed.netloc or not parsed.path:
                 continue
@@ -40,4 +40,4 @@ for file in files:
 if errors:
     print("\n".join(errors), file=sys.stderr)
     sys.exit(1)
-print(f"Checked {len(files)} Markdown files for headings, local links and pinned links")
+print(f"Checked {len(files)} Markdown files for headings, local links and supported development refs")

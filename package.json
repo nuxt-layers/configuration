@@ -1,13 +1,13 @@
 {
-  "name": "@nuxt4-layers/configuration",
-  "version": "1.2.0",
+  "name": "@nuxt-layers/configuration",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "description": "Nuxt 4 foundation layer for the facts a site, a tenant or a group states about itself, changed only through approved pending changes.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nuxt4-layers/configuration"
+    "url": "https://github.com/nuxt-layers/configuration"
   },
   "exports": {
     ".": "./nuxt.config.ts",
@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
-    "@nuxt4-layers/theme-manager": "git+https://github.com/nuxt4-layers/theme-manager.git#934d1bd33e0731aafea0d454857dc8fbb756ccb2",
+    "@nuxt-layers/theme-manager": "github:nuxt-layers/theme-manager#master",
     "@playwright/test": "^1.64.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.13.6",
@@ -54,7 +54,7 @@
     "vitest": "^5.0.3",
     "vue-tsc": "^3.3.11"
   },
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@12.16.1",
   "engines": {
     "node": ">=22"
   }

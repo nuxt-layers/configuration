@@ -1,14 +1,14 @@
 # Configuration Host Contract
 
-What a host needs to compose Configuration 1.2.0 (contract version 1), and nothing else ([ADR-0012](https://github.com/nuxt4-layers/platform-architecture/blob/249cd48af72e0a3fc232d40c8aa05e8da3b32069/docs/decisions/ADR-0012-trivial-composition.md#6-a-one-page-host-contract) §6). The [contract](docs/contracts.md) and the code stay the source: where this page disagrees with them, this page is the bug. Configuration does not meet ADR-0012 yet: it has no single call taking the shared shapes, no `examples/minimal-host`, and no default for its Identity and Authorisation ports, so today the host wires the layer's own adapters below itself.
+What a host needs to compose Configuration 0.0.0 (contract version 1), and nothing else ([ADR-0012](https://github.com/nuxt-layers/architecture-rules/blob/master/docs/decisions/ADR-0012-trivial-composition.md#6-a-one-page-host-contract) §6). The [contract](docs/contracts.md) and the code stay the source: where this page disagrees with them, this page is the bug. Configuration does not meet ADR-0012 yet: it has no single call taking the shared shapes, no `examples/minimal-host`, and no default for its Identity and Authorisation ports, so today the host wires the layer's own adapters below itself.
 
 ## Install
 
 ```json
-"@nuxt4-layers/configuration": "github:nuxt4-layers/configuration#v1.2.0"
+"@nuxt-layers/configuration": "github:nuxt-layers/configuration#master"
 ```
 
-`extends: ['@nuxt4-layers/configuration']` in `nuxt.config.ts`; install with `--frozen-lockfile`. One Nitro plugin, beside the IAM suite's (members' functions and the layer's adapters are auto-imported):
+`extends: ['@nuxt-layers/configuration']` in `nuxt.config.ts`; install with `--frozen-lockfile`. One Nitro plugin, beside the IAM suite's (members' functions and the layer's adapters are auto-imported):
 
 ```ts
 provideConfigurationDatabase({ dialect: 'postgres', pool, migrationPool, runtimeRole: 'configuration_runtime' })
@@ -101,7 +101,7 @@ How a change is decided: every change is a pending change, whatever its risk. Th
 
 ## Screens
 
-The presentation part is styled only with Theme Manager's vocabulary. Import `@nuxt4-layers/theme-manager/presentation.css`, then `@nuxt4-layers/configuration/tailwind.css`.
+The presentation part is styled only with Theme Manager's vocabulary. Import `@nuxt-layers/theme-manager/presentation.css`, then `@nuxt-layers/configuration/tailwind.css`.
 
 | Page | Default path | Scope, from the query |
 |---|---|---|
@@ -128,7 +128,7 @@ A screen the host draws itself must still:
 
 - Tenant, group and identity identifiers are Identity's opaque UUIDv7s. Events and logs carry identifiers, keys and codes only, never a value.
 - Keys are `namespace.name`, lower-case ASCII with `-`. A duplicate, a reserved namespace or a default the schema refuses fails at start-up.
-- The docs name `app.config.ts` `configuration.values` and `NUXT_PUBLIC_CONFIGURATION_*` for deployment values; 1.2.0 reads only `provideConfigurationDeployment`.
+- The docs name `app.config.ts` `configuration.values` and `NUXT_PUBLIC_CONFIGURATION_*` for deployment values; The current implementation reads only `provideConfigurationDeployment`.
 - A tenant's first host name is set from the platform's own host name, with `?tenantId=`. A host name belongs to one tenant (`host-taken`).
 - Group values are never served anonymously; `members` group values need a membership of that group, not an ancestor.
 - `forbidden` also means "does not exist". A missing required port throws `ConfigurationCompositionError` at first use and answers `unavailable`; nothing falls back.
