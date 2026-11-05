@@ -10,6 +10,7 @@ import { originRejected, configurationHttpError } from '../server/internal/http'
 import {
   clearConfigurationComposition,
   provideConfigurationAccessDecision,
+  provideConfigurationCatalogue,
   provideConfigurationDatabase,
   provideConfigurationDirectory,
   provideConfigurationGovernance,
@@ -20,6 +21,7 @@ import {
 import { createTestDatabase, hasDatabase, requireDatabaseInCi } from './support/database'
 import { toPosix } from './support/paths'
 import { id, World } from './support/world'
+import { clockPresentationDeclarations, toClockPresentationPreferences } from '../examples/clock-preferences'
 
 requireDatabaseInCi()
 
@@ -243,6 +245,66 @@ describe.skipIf(!hasDatabase)('the /api/configuration endpoints', () => {
     })
     expect(claim.status).toBe(409)
     expect(claim.data).toMatchObject({ code: 'conflict', reason: 'host-taken' })
+  })
+
+  it('serves host-declared Clock preferences through authorised HTTP reads, without Clock installed', async () => {
+    provideConfigurationCatalogue(clockPresentationDeclarations)
+    world.account(alice, tenantA)
+    world.account(bob, tenantA)
+    world.join(alice, teamA)
+
+    await seed('platform', '', null, { 'clock.time-zone': 'UTC', 'clock.locale': 'en-GB' })
+    await seed('tenant', tenantA, tenantA, { 'clock.locale': 'fr-FR' })
+    await seed('group', teamA, tenantA, { 'clock.date-pattern': 'yyyy-MM-dd' })
+    await pool.query(
+      `insert into "configuration"."value" ("scope", "scope_id", "tenant_id", "key", "value", "change_id", "updated_at") values ('account', $1, null, 'clock.locale', $2::jsonb, $3, now())`,
+      [alice, JSON.stringify('cy-GB'), id()],
+    )
+
+    const anonymous = await call('GET', 'http://acme.test/api/configuration/public')
+    expect(anonymous.status).toBe(200)
+    expect(anonymous.data.values).not.toHaveProperty('clock.locale')
+
+    const group = await call('GET', `http://acme.test/api/configuration?groupId=${teamA}`, { as: alice })
+    expect(group.status).toBe(200)
+    expect(toClockPresentationPreferences(group.data.values)).toMatchObject({
+      locale: 'fr-FR',
+      timeZone: 'UTC',
+      datePattern: 'yyyy-MM-dd',
+      hourCycle: 'h23',
+    })
+    expect(group.data.provenance['clock.date-pattern']).toEqual({ source: 'group', groupId: teamA })
+
+    const account = await call('GET', 'http://acme.test/api/configuration?scope=account', { as: alice })
+    expect(account.status).toBe(200)
+    expect(toClockPresentationPreferences(account.data.values)).toMatchObject({
+      locale: 'cy-GB',
+      datePattern: 'dd/MM/yyyy',
+      timePattern: 'HH:mm:ss',
+      dateTimePattern: 'dd/MM/yyyy HH:mm:ss',
+    })
+    expect(account.data.provenance['clock.locale']).toEqual({ source: 'account' })
+    expect(JSON.parse(JSON.stringify(toClockPresentationPreferences(account.data.values))))
+      .toEqual(toClockPresentationPreferences(account.data.values))
+    expect(account.headers.get('cache-control')).not.toMatch(/^public/)
+
+    const other = await call('GET', 'http://acme.test/api/configuration?scope=account', { as: bob })
+    expect(other.status).toBe(200)
+    expect(other.data.values['clock.locale']).toBe('fr-FR')
+    expect(other.data.values['clock.locale']).not.toBe('cy-GB')
+    expect((await call('GET', 'http://acme.test/api/configuration?scope=account')).status).toBe(401)
+
+    const invalid = await call('POST', 'http://acme.test/api/configuration/changes', {
+      as: alice,
+      body: {
+        target: { scope: 'account' },
+        set: { 'clock.hour-cycle': 'h25' },
+        expected: { 'clock.hour-cycle': null },
+        justification: { reasonCode: 'preferences' },
+      },
+    })
+    expect(invalid.status).toBe(400)
+    expect(invalid.data.code).toBe('validation-failed')
   })
 
   it('serves a person their own account only, on any host, and never takes another\'s identity', async () => {
