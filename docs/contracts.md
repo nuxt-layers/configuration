@@ -309,7 +309,7 @@ provideAuthenticationSiteIdentity(async ({ tenantId }) => {
 
 ### 12.2 Moving values between environments
 
-`exportConfiguration` answers `{ format: 'nuxt4-layers.configuration', version: 1, scope, exportedAt, values }`: the values set at that scope, and nothing that names where they came from. An account is never exported this way; a person's values are in their own export.
+`exportConfiguration` answers `{ format: 'nuxt4-layers.configuration', version: 1, scope, exportedAt, values }`: the values set at that scope, and nothing that names where they came from. The `nuxt4-layers.configuration` value is a historical on-wire format identifier retained for import compatibility, not a current organisation or package reference. An account is never exported this way; a person's values are in their own export.
 
 `requestConfigurationImport` takes such a document and a target of the same kind of scope (`scope-mismatch` otherwise), and requests one change of the keys whose value differs there (`nothing-to-change` when none does), with each key's current digest as `expected`. It is an ordinary request (§6): the subject needs the scope's permission, every value is checked against the catalogue, and the riskiest key decides the approvals. Importing never bypasses them. Keys the document leaves out are left as they are.
 
