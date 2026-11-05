@@ -58,6 +58,46 @@ const demoEnabled = defineConfigurationSetting({ key: 'demo.enabled', schema: z.
 
 `scopes` any of the four; `visibility` `public`, `members` or `server` (an `account` setting is never `public`); `sensitivity` `organisational` or `possibly-personal`; `risk` `low` to `critical`; `inherits` `lineage` (default) or `none`. A `locked` setting is set only by `provideConfigurationDeployment`: no scope, page or import changes it at run time, and a change naming it is `validation-failed`. Use it for what the deployment, not an administrator, decides, such as `demo.enabled`. Never declare a secret, personal data or another member's policy.
 
+### Optional Clock presentation preferences (host-declared)
+
+These six settings are **not built-in Configuration keys**. A consuming host may declare them using the existing `defineConfigurationSetting` and `provideConfigurationCatalogue` APIs. A complete optional declaration and mapping example is in `examples/clock-preferences.ts`; copy it into the host as needed. It imports no Clock code. The existing Configuration catalogue, persistence and permission mechanisms need no extension.
+
+| Key | Declared default | Shape |
+|---|---|---|
+| `clock.locale` | `en-GB` | BCP 47 string |
+| `clock.time-zone` | `UTC` | Valid time-zone identifier |
+| `clock.hour-cycle` | `h23` | `h11 \| h12 \| h23 \| h24` |
+| `clock.date-pattern` | `dd/MM/yyyy` | Bounded presentation string |
+| `clock.time-pattern` | `HH:mm:ss` | Bounded presentation string |
+| `clock.date-time-pattern` | `dd/MM/yyyy HH:mm:ss` | Bounded presentation string |
+
+Host composition:
+
+```ts
+// Copy the example declarations and mapping helper into the host.
+provideConfigurationCatalogue(clockPresentationDeclarations)
+
+// In a trusted server handler, after resolving and authorising the request's viewer:
+const answer = await getConfiguration({
+  // Use the authorised tenantId OR groupId OR accountId for that context.
+  tenantId: authorisedTenantId,
+  keys: clockPresentationKeys,
+  visibility: 'members',
+})
+if (!answer) throw new Error('Configuration context unavailable')
+const preferences: ClockPresentationPreferences = toClockPresentationPreferences(answer.values)
+```
+
+**Access control:** `getConfiguration` is a privileged *server* function and does not authorise a supplied `accountId` on the host's behalf. Never accept these scope identifiers from untrusted request input. Resolve them from the authenticated viewer and authoritative tenant/group membership; use `readConfigurationForViewer` where appropriate for a viewer-authorised read. Restrict account values to the current person. Do not expose another account's settings, credentials, provenance or shared cache entries. These example keys use `members` visibility because account-capable declarations cannot be `public`.
+
+**Precedence:** Existing resolution applies: account overrides tenant/platform/default for an account read; group and nearest ancestors override tenant/platform/default for a group read. The current `getConfiguration({ accountId })` **does not combine account and group lineage** and rejects pairing `accountId` with `tenantId` or `groupId`. If a host needs both contexts, it must explicitly choose its application policy and perform separately authorised reads. Do not claim a combined resolution order.
+
+**Validation:** Configuration validates stored values against the host's Zod declarations and rejects invalid submitted values. The example checks locale shape, time-zone validity, hour-cycle membership, pattern length and safe characters, but **does not validate Clock's pattern tokens or temporal semantics**. Clock's future explicit parsing/formatting API, proposed in Clock PR #13, must validate token grammar. Do not accept arbitrary pattern text as a valid temporal pattern merely because Configuration accepts its structural shape. The mapping helper supplies declared defaults for missing values; invalid present values throw.
+
+**SSR and hydration:** Resolve on the server for the authorised viewer, serialise only the six primitive preference values into that viewer's request-scoped hydration payload and use the *identical* object during initial rendering and hydration. Do not redetect browser time zone or locale until an explicit subsequent preference update. Mark personalised responses private/non-shared; never put account preferences in public runtime configuration.
+
+**Ownership:** Profile remains the owner of personal locale and time-zone preferences under the present contract. Before adopting the account keys, the host must define how these map to, or are overridden by, Profile, avoiding two competing sources of truth. Configuration manages only host-declared values, scopes and storage. Clock is optional and never imported by Configuration. Pattern-based Clock formatting remains proposed, not implemented.
+
 ## Host passes
 
 | Need | Shared shape (ADR-0012 §2) | Today |
