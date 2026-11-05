@@ -31,3 +31,10 @@ The layer is specified before it is built. Each phase keeps the [contract outlin
 - 1.1.0: the package renamed `@nuxt-layers/configuration` after its repository, so a host composing local folders finds it at `../configuration` like every other layer. Contract version 1 is unchanged; hosts change only the package name in their dependency, `extends` and imports.
 - 1.2.0: `contact.security`, where vulnerabilities are reported (a site's `security.txt`, RFC 9116), `high` and for platform and tenant only. Contract version 1 is unchanged: an added setting is a minor release (contracts.md §16).
 - [`CONTRACT.md`](../CONTRACT.md): the host contract for the current development revision (ADR-0012 §6), with what the host wires itself until the layer meets ADR-0012.
+
+## Optional Clock presentation integration (host example)
+
+- Added a host-side example of six `clock.*` settings with defaults, structural validation and mapping to a six-field plain-data object, without a Configuration-to-Clock dependency.
+- Mock consumer tests demonstrate resolution, precedence, account visibility, invalid values, defaults and SSR-safe serialisation using existing Configuration primitives.
+- The existing public APIs are unchanged. A combined account-plus-group precedence and Clock pattern grammar validation are **not** provided by Configuration.
+- Integration of personal locale/time-zone with Profile remains the responsibility of the consuming host. Clock's pattern operations are future work in Clock, not part of this repository.
