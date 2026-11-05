@@ -2,9 +2,9 @@
 
 Nuxt 4 foundation layer for the facts a site states about itself and its organisation: its name, the organisation's legal details and address, contact points, social links, legal pages and presentation defaults, for the platform, each tenant and each group; and the settings a host declares per account, which only the account's own person reads or changes.
 
-A platform foundation layer, not a member of the Identity and Access Management (IAM) suite. It reaches [`identity`](https://github.com/nuxt-layers/identity) and [`authorisation`](https://github.com/nuxt-layers/authorisation) only through ports the host supplies, never imports them, and follows the suite's [approvals process](https://github.com/nuxt-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/approvals.md) for its own changes.
+A platform foundation layer, not a member of the Identity and Access Management (IAM) suite. It reaches Identity and Authorisation only through ports the host supplies, never imports them, and follows the suite's approvals process for its own changes.
 
-**Status:** development version 0.0.0, contract version 1 ([host contract](CONTRACT.md), [contract](docs/contracts.md), [roadmap](docs/roadmap.md)): the core, the HTTP API (tenant by host name), `useConfiguration()`, the public components, the administration pages, accounts, export and import, and composition with the IAM members through the layer's own adapters, proven in the platform test harness. From 1.1.0 the package is `@nuxt-layers/configuration`, named after its repository like every other layer (1.0.0 was published as `@nuxt-layers/configuration-service`). 1.2.0 adds `contact.security`, the contact a site's `security.txt` names.
+The layer exposes an HTTP API, client composables, administration screens, account-scoped settings, export/import and host-supplied IAM adapters. See the [standalone host contract](CONTRACT.md) for the current development integration.
 
 ## Owns
 
@@ -44,16 +44,12 @@ An organisation's address or contact point can still be personal data (a sole tr
 - [Host contract](CONTRACT.md): the one page a host needs to compose the layer (ADR-0012 §6)
 - [Contract](docs/contracts.md) (version 1): boundaries, declarations, scopes and precedence, visibility, changes and approvals, events, ports, server functions, HTTP API and presentation
 - [Roadmap](docs/roadmap.md)
+- Clock presentation preferences are optional **host-declared settings**, not built-in keys; their complete integration is in [CONTRACT.md](CONTRACT.md).
 
 ## Documentation checks
 
-`python3 scripts/check_markdown.py` checks headings, local links, and that links to other `nuxt4-layers` documents are pinned to a tag or commit.
+`python3 scripts/check_markdown.py` checks headings, local links and unsupported development references.
 
 ## Governing decisions and specifications
 
-- [ADR-0002 — Composition-Supplied Persistence and Capability-Owned Schemas](https://github.com/nuxt-layers/architecture-rules/blob/master/docs/decisions/ADR-0002-composition-supplied-persistence-and-capability-owned-schemas.md)
-- [ADR-0003 — Group Model and Identity Before Logging](https://github.com/nuxt-layers/architecture-rules/blob/master/docs/decisions/ADR-0003-group-model-and-identity-first.md)
-- [ADR-0004 — Documentation Placement](https://github.com/nuxt-layers/architecture-rules/blob/master/docs/decisions/ADR-0004-documentation-placement.md)
-- [ADR-0006 — Polyglot Persistence and Data-Store Security](https://github.com/nuxt-layers/architecture-rules/blob/master/docs/decisions/ADR-0006-polyglot-persistence-and-data-store-security.md)
-- [Approvals (two-person rule)](https://github.com/nuxt-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/approvals.md)
-- [Tenant lifecycle](https://github.com/nuxt-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/tenant-lifecycle.md) and [group deletion](https://github.com/nuxt-layers/iam-integration/blob/899befcf566775950c4b70b8cf0e7658be1000f9/docs/processes/group-deletion.md)
+The authoritative ecosystem rules live in `nuxt-layers/architecture-rules`. The [host contract](CONTRACT.md) records Configuration's supported integration surface, including optional Clock presentation preferences; [docs/contracts.md](docs/contracts.md) explains the implementation boundaries.
